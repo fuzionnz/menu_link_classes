@@ -1,17 +1,18 @@
 <?php
 
 /**
- *
+ * @file
+ * Administration for Menu Link Classes.
  */
 
 /**
- * System settings form for Menu Classes.
+ * System settings form for Menu Link Classes.
  */
 function menu_link_classes_admin_form() {
   $form['menu_link_classes_default_state'] = array(
     '#type' => 'radios',
     '#title' => t('Default State'),
-    '#default_value' => variable_get('menu_link_classes_default_state', true),
+    '#default_value' => variable_get('menu_link_classes_default_state', TRUE),
     '#options' => array(
       1 => 'On',
       0 => 'Off',
@@ -34,7 +35,9 @@ function menu_link_classes_admin_form() {
 }
 
 /**
- * Validation handler to change format for storing the menu_link_classes_options variable.
+ * Validation handler.
+ *
+ * Changes format for storing menu_link_classes_options variable.
  */
 function menu_link_classes_admin_form_validate($form, &$form_state) {
   $options = array();
@@ -42,10 +45,10 @@ function menu_link_classes_admin_form_validate($form, &$form_state) {
     $lines = explode("\n", $form_state['values']['menu_link_classes_options']);
     foreach ($lines as $line) {
       $option = explode('|', $line);
-      if (sizeof($option) > 2) {
+      if (count($option) > 2) {
         form_set_error('menu_link_classes_options', t('Only one pipe (|) character per line in the <em>Classes</em> field.'));
       }
-      if (sizeof($option) == 1) {
+      if (count($option) == 1) {
         $option[1] = $option[0];
       }
       $options[$option[0]] = $option[1];
