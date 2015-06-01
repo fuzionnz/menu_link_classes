@@ -1,0 +1,136 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function menu_link_classes_menu() {
+  // Module settings.
+  $items['admin/config/user-interface/menu-link-classes'] = array(
+    'title' => 'Menu Link Classes',
+    'description' => 'Adjust classes for menu link items.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('menu_link_classes_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'menu_link_classes.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements MODULE_preprocess_HOOK().
+ *
+ * Adds classes to the list item.
+ *
+ * @see theme_menu_link()
+ */
+function menu_link_classes_preprocess_menu_link(&$variables) {
+  if (isset($variables['element']['#original_link']['mlid']) && $mlid = $variables['element']['#original_link']['mlid']) {
+    $variables['element']['#attributes']['class'][] = 'menu-link-classes';
+    foreach (variable_get('menu_link_classes_options', array()) as $key => $value) {
+      if (_menu_link_classes_mlid_get_class_state($mlid, $key)) {
+        $variables['element']['#attributes']['class'][] = $key;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORMID_alter().
+ *
+ * Add checkboxes for each menu class to the menu list form.
+ *
+ * @param array Drupal FAPI form structure
+ * @param array Drupal FAPI form state
+ * @param string Form ID
+ */
+function menu_link_classes_form_menu_overview_form_alter(&$form, &$form_state, $form_id) {
+  $classes = variable_get('menu_link_classes_options', array());
+  $form['#attached']['css'][] = array(
+    'data' => drupal_get_path('module', 'menu_link_classes') . '/menu_link_classes.css'
+  );
+  $form['#attached']['js'][] = array(
+    'data' => drupal_get_path('module', 'menu_link_classes') . '/menu_link_classes.js'
+  );
+  $form['menu_link_classes']['#tree'] = TRUE;
+  foreach (element_children($form) as $key) {
+    if (stristr($key, 'mlid:')) {
+      $checkboxes = '';
+      $mlid = str_replace('mlid:', '', $key);
+      $el_key = 'menu_link_classes_' . $key;
+      foreach ($classes as $opt_key => $opt_val) {
+        $name = $el_key . ':' . $opt_key;
+        $form['menu_link_classes'][$name] = array(
+          '#type' => 'checkbox',
+          '#value' => 1,
+          '#title_display' => TRUE,
+          '#title' => $opt_val,
+          '#name' => $name,
+          '#id' => $name,
+          '#attributes' => array(
+            'class' => array('menu-class'),
+          ),
+        );
+        if (isset($form[$key]['#item']['hidden']) && $form[$key]['#item']['hidden'] == 1) {
+        //if (isset($form[$key]['hidden']['#default_value']) && $form[$key]['hidden']['#default_value'] == TRUE) {
+          $form['menu_link_classes'][$name]['#attributes']['disabled'] = 'disabled';
+          // @TODO JS to enable/disable when hidden clicky.
+        }
+        if (_menu_link_classes_mlid_get_class_state($mlid, $opt_key)) {
+          $form['menu_link_classes'][$name]['#attributes']['checked'] = 'checked';
+        }
+        $checkboxes .= drupal_render($form['menu_link_classes'][$name]);
+      }
+      $form[$key]['title']['#markup'] .= '<div class="menu-link-classes">' . $checkboxes . '</div>';
+    }
+  }
+  $form['#submit'][] = 'menu_link_classes_form_menu_overview_form_submit';
+}
+
+/**
+ * Custom submit handler for menu_overview_form when in list mode.
+ *
+ * @param array Drupal FAPI form structure
+ * @param array Drupal FAPI form state
+ */
+function menu_link_classes_form_menu_overview_form_submit($form, &$form_state) {
+  foreach ($form_state['values']['menu_link_classes'] as $key => $value) {
+    if (preg_match('/^[^:]*:([0-9]+):(.+)$/', $key, $matches)) {
+      _menu_link_classes_mlid_set_class_state($matches[1], $matches[2], (int) isset($form_state['input'][$key]));
+    }
+  }
+}
+
+/**
+ * Store a mlid:class state.
+ *
+ * @param integer menu link id
+ * @param string class name
+ * @param boolean|integer on/off
+ */
+function _menu_link_classes_mlid_set_class_state($mlid, $class, $state) {
+  $values = array(
+    'mlid' => $mlid,
+    'class' => $class,
+    'enabled' => $state,
+  );
+  db_merge('menu_link_classes')
+    ->key(array('mlid' => $mlid, 'class' => $class))
+    ->fields($values)
+    ->execute();
+}
+
+/**
+ * Retrieve a mlid:class state.
+ *
+ * @param integer menu link id
+ * @param string class name
+ * @return boolean|integer true or false
+ */
+function _menu_link_classes_mlid_get_class_state($mlid, $class) {
+  $default_state = variable_get('menu_link_classes_default_state');
+  $result = db_query('SELECT enabled FROM {menu_link_classes} WHERE mlid = :mlid AND class = :class', array(':mlid' => $mlid, ':class' => $class));
+  foreach ($result as $record) {
+    return $record->enabled;
+  }
+  return $default_state;
+}

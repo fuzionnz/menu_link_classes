@@ -1,0 +1,5 @@
+name = Menu Classes
+description = Add classes for menu items.
+core = 7.x
+package = Other
+version = 7.x-1.x

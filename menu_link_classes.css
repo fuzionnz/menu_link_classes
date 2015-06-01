@@ -1,0 +1,20 @@
+#menu-overview-form .menu-link-classes {
+  display: block;
+  width: auto;
+  float: right;
+}
+#menu-overview-form .menu-link-classes div {
+  float: left;
+}
+#menu-overview-form .menu-link-classes input {
+  float: left;
+  margin-top: 0.33em;
+  margin-left: 25%;
+}
+#menu-overview-form .menu-link-classes label {
+  float: right;
+  text-align: left;
+}
+#menu-overview-form div.menu-link-classes {
+  // width: 25%;
+}

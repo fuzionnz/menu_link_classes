@@ -1,0 +1,41 @@
+<?php
+
+/**
+ *
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function menu_link_classes_schema() {
+  $schema['menu_link_classes'] = array(
+    'description' => 'Contains menu link class selections.',
+    'fields' => array(
+      'mlid' => array(
+        'description' => 'The menu link ID (mlid) is the integer primary key.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'class' => array(
+        'description' => 'The name of a class to apply to this menu item.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+        'not null' => FALSE,
+      ),
+      'enabled' => array(
+        'description' => 'A flag for whether the link should have the class applied. (1 = yes, 0 = no)',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'small',
+      ),
+    ),
+    'indexes' => array(
+      'mlid_class' => array('mlid', 'class'),
+    ),
+    'primary key' => array('mlid', 'class'),
+  );
+  return $schema;
+}
